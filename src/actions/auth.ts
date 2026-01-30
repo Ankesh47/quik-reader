@@ -43,18 +43,34 @@ export async function register(_: { error?: string } | null, formData: FormData)
 }
 
 export async function login(_: { error?: string } | null, formData: FormData) {
+    // const start = Date.now();
     const username = formData.get('username') as string;
     const password = formData.get('password') as string;
 
     try {
+        // const dbStart = Date.now();
         await connectDB();
-        const user = await User.findOne({ username });
+        // console.log(`[Perf] DB Connect: ${Date.now() - dbStart}ms`);
 
-        if (!user || !user.password || !(await bcrypt.compare(password, user.password))) {
+        // const userStart = Date.now();
+        const user = await User.findOne({ username });
+        // console.log(`[Perf] User Fetch: ${Date.now() - userStart}ms`);
+
+        if (!user || !user.password) {
             return { error: 'Invalid credentials' };
         }
 
+        // const hashStart = Date.now();
+        const isMatch = await bcrypt.compare(password, user.password);
+        // console.log(`[Perf] Bcrypt Compare: ${Date.now() - hashStart}ms`);
+
+        if (!isMatch) {
+            return { error: 'Invalid credentials' };
+        }
+
+        // const tokenStart = Date.now();
         const token = await signToken({ userId: user._id, username: user.username, role: user.role });
+        // console.log(`[Perf] Token Sign: ${Date.now() - tokenStart}ms`);
 
         (await cookies()).set('token', token, {
             httpOnly: true,
@@ -62,6 +78,8 @@ export async function login(_: { error?: string } | null, formData: FormData) {
             maxAge: 60 * 60 * 24 * 7, // 1 week
             path: '/'
         });
+
+        // console.log(`[Perf] Total Login: ${Date.now() - start}ms`);
 
     } catch (err) {
         console.error('Login error:', err);

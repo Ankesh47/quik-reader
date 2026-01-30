@@ -4,7 +4,7 @@ interface ProgressBarProps {
     progress: number;
 }
 
-export function ProgressBar({ progress }: ProgressBarProps) {
+export const ProgressBar = React.memo(function ProgressBar({ progress }: ProgressBarProps) {
     return (
         <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
             <div
@@ -17,4 +17,4 @@ export function ProgressBar({ progress }: ProgressBarProps) {
             />
         </div>
     );
-}
+});

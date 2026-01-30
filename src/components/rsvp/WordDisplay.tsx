@@ -5,7 +5,7 @@ interface WordDisplayProps {
     word: string;
 }
 
-export function WordDisplay({ word }: WordDisplayProps) {
+export const WordDisplay = React.memo(function WordDisplay({ word }: WordDisplayProps) {
     // Memoize the processed word to avoid recalculation on re-renders if the word hasn't changed
     const { leftPart, highlight, rightPart } = useMemo(() => processWord(word), [word]);
 
@@ -42,4 +42,4 @@ export function WordDisplay({ word }: WordDisplayProps) {
             </div>
         </div>
     );
-}
+});

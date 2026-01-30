@@ -3,22 +3,30 @@
 import { connectDB } from '@/lib/db';
 import Story from '@/models/Story';
 
-export async function getAllStories() {
-    try {
-        await connectDB();
-        const stories = await Story.find({}).sort({ createdAt: -1 }); // Newest first
-        return stories.map(story => ({
-            _id: story._id.toString(),
-            title: story.title,
-            level: story.level,
-            difficulty: story.difficulty,
-            contentLength: story.content.split(' ').length
-        }));
-    } catch (error) {
-        console.error('Fetch all stories error:', error);
-        return [];
-    }
-}
+import { unstable_cache } from 'next/cache';
+
+export const getAllStories = unstable_cache(
+    async () => {
+        try {
+            await connectDB();
+            // We need content to count words, but usually we should store wordCount in DB. 
+            // For now, we fetch it but cache the result so DB is hit once per hour.
+            const stories = await Story.find({}).sort({ createdAt: -1 });
+            return stories.map(story => ({
+                _id: story._id.toString(),
+                title: story.title,
+                level: story.level,
+                difficulty: story.difficulty,
+                contentLength: story.content.split(' ').length
+            }));
+        } catch (error) {
+            console.error('Fetch all stories error:', error);
+            return [];
+        }
+    },
+    ['stories-list'],
+    { revalidate: 3600, tags: ['stories'] }
+);
 
 export async function getStoryById(id: string) {
     try {
